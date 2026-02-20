@@ -1,20 +1,27 @@
-"""
-Key Repeat Tool
-===============
+"""Key Repeat Tool.
+
 A simple Windows utility with a GUI that rapidly repeats a configured key
 while it is physically held down — much faster than the default OS key repeat.
 
-Requirements:  Python 3.7+, keyboard
-Usage:         python key_repeat.py
-Note:          On Windows you may need to run the terminal as Administrator
-               so the keyboard library can install global key hooks.
+Requirements:
+    Python 3.12+, keyboard
+
+Usage:
+    python key_repeat.py
+
+Note:
+    On Windows you may need to run the terminal as Administrator
+    so the keyboard library can install global key hooks.
 """
+
+from __future__ import annotations
 
 import sys
 import threading
 import time
 import tkinter as tk
 from tkinter import ttk
+from typing import TYPE_CHECKING, Any
 
 try:
     import keyboard
@@ -22,61 +29,83 @@ except ImportError:
     print("ERROR: 'keyboard' package not found.\nInstall it with:  pip install keyboard")
     sys.exit(1)
 
+if TYPE_CHECKING:
+    from keyboard import KeyboardEvent
+
+# ── Constants ────────────────────────────────────────────────────────────
+DEFAULT_KEY: str = "e"
+DEFAULT_INTERVAL_MS: float = 30.0
+MIN_INTERVAL_MS: int = 5
+MAX_INTERVAL_MS: int = 200
+FALLBACK_INTERVAL_S: float = 0.030
+
+WINDOW_TITLE: str = "Key Repeat Tool"
+WINDOW_SIZE: str = "400x340"
+
+COLOR_ON: str = "#339933"
+COLOR_ON_ACTIVE: str = "#227722"
+COLOR_OFF: str = "#cc3333"
+COLOR_OFF_ACTIVE: str = "#aa2222"
+COLOR_KEY: str = "#0066cc"
+
+FONT_FAMILY: str = "Segoe UI"
+
 
 class KeyRepeatApp:
-    """GUI application that rapidly repeats a target key while it is held."""
+    """GUI application that rapidly repeats a target key while it is held.
 
-    def __init__(self):
+    Attributes:
+        root: The tkinter root window.
+        enabled: Whether the repeat feature is currently active.
+        target_key: The key name to hook and repeat.
+    """
+
+    def __init__(self) -> None:
         self.root = tk.Tk()
-        self.root.title("Key Repeat Tool")
-        self.root.geometry("400x340")
+        self.root.title(WINDOW_TITLE)
+        self.root.geometry(WINDOW_SIZE)
         self.root.resizable(False, False)
 
-        # ── State ────────────────────────────────────────────────────
-        self.enabled = False
-        self.key_physically_held = False
-        self.capturing_key = False
-        self.target_key = "e"
-        self.repeat_interval_ms = tk.DoubleVar(value=30.0)
-        self._simulating = False
-        self._hook = None
+        self.enabled: bool = False
+        self.key_physically_held: bool = False
+        self.capturing_key: bool = False
+        self.target_key: str = DEFAULT_KEY
+        self.repeat_interval_ms = tk.DoubleVar(value=DEFAULT_INTERVAL_MS)
+        self._simulating: bool = False
+        self._hook: Any = None
+        self._lock = threading.Lock()
 
-        # ── UI & window close handler ────────────────────────────────
         self._build_ui()
         self.root.protocol("WM_DELETE_WINDOW", self._on_close)
 
-    # ================================================================ UI
-
-    def _build_ui(self):
+    def _build_ui(self) -> None:
+        """Construct all UI widgets."""
         style = ttk.Style()
-        style.configure("Header.TLabel", font=("Segoe UI", 16, "bold"))
-        style.configure("Info.TLabel", font=("Segoe UI", 10))
-        style.configure("Small.TLabel", font=("Segoe UI", 9), foreground="gray")
+        style.configure("Header.TLabel", font=(FONT_FAMILY, 16, "bold"))
+        style.configure("Info.TLabel", font=(FONT_FAMILY, 10))
+        style.configure("Small.TLabel", font=(FONT_FAMILY, 9), foreground="gray")
 
         main = ttk.Frame(self.root, padding=20)
         main.pack(fill="both", expand=True)
 
-        # Title
-        ttk.Label(main, text="Key Repeat Tool", style="Header.TLabel").pack(pady=(0, 15))
+        ttk.Label(main, text=WINDOW_TITLE, style="Header.TLabel").pack(pady=(0, 15))
 
-        # ── On / Off toggle button ──────────────────────────────────
         self.toggle_btn = tk.Button(
             main,
             text="OFF",
             width=18,
             height=2,
-            bg="#cc3333",
+            bg=COLOR_OFF,
             fg="white",
-            activebackground="#aa2222",
+            activebackground=COLOR_OFF_ACTIVE,
             activeforeground="white",
-            font=("Segoe UI", 12, "bold"),
+            font=(FONT_FAMILY, 12, "bold"),
             relief="flat",
             cursor="hand2",
             command=self._toggle,
         )
         self.toggle_btn.pack(pady=(0, 15))
 
-        # ── Key selection row ───────────────────────────────────────
         key_frame = ttk.Frame(main)
         key_frame.pack(fill="x", pady=(0, 12))
 
@@ -84,8 +113,8 @@ class KeyRepeatApp:
         self.key_display = ttk.Label(
             key_frame,
             text=self.target_key.upper(),
-            font=("Segoe UI", 11, "bold"),
-            foreground="#0066cc",
+            font=(FONT_FAMILY, 11, "bold"),
+            foreground=COLOR_KEY,
         )
         self.key_display.pack(side="left", padx=(8, 12))
 
@@ -94,7 +123,6 @@ class KeyRepeatApp:
         )
         self.change_key_btn.pack(side="left")
 
-        # ── Speed slider ────────────────────────────────────────────
         speed_frame = ttk.Frame(main)
         speed_frame.pack(fill="x", pady=(0, 5))
 
@@ -105,8 +133,8 @@ class KeyRepeatApp:
         ttk.Label(slider_row, text="5 ms").pack(side="left")
         self.speed_slider = ttk.Scale(
             slider_row,
-            from_=5,
-            to=200,
+            from_=MIN_INTERVAL_MS,
+            to=MAX_INTERVAL_MS,
             variable=self.repeat_interval_ms,
             orient="horizontal",
         )
@@ -118,13 +146,13 @@ class KeyRepeatApp:
         self._update_speed_info()
         self.repeat_interval_ms.trace_add("write", lambda *_: self._update_speed_info())
 
-        # ── Status bar ──────────────────────────────────────────────
         self.status_var = tk.StringVar(value="Ready")
         ttk.Label(main, textvariable=self.status_var, style="Small.TLabel").pack(
             side="bottom", pady=(10, 0)
         )
 
-    def _update_speed_info(self):
+    def _update_speed_info(self) -> None:
+        """Refresh the speed label text from the current slider value."""
         try:
             ms = max(1, int(self.repeat_interval_ms.get()))
         except (tk.TclError, ValueError):
@@ -132,72 +160,73 @@ class KeyRepeatApp:
         rps = 1000 // ms
         self.speed_info.config(text=f"{ms} ms  (~{rps} repeats/sec)")
 
-    # ============================================================ Toggle
-
-    def _toggle(self):
+    def _toggle(self) -> None:
+        """Toggle the key-repeat feature on or off."""
         if self.capturing_key:
             return
         self.enabled = not self.enabled
         if self.enabled:
             self._install_hook()
-            self.toggle_btn.config(text="ON", bg="#339933", activebackground="#227722")
+            self.toggle_btn.config(text="ON", bg=COLOR_ON, activebackground=COLOR_ON_ACTIVE)
             self.status_var.set(f"Active  —  hold [{self.target_key.upper()}] for rapid repeat")
         else:
             self._uninstall_hook()
             self.key_physically_held = False
-            self.toggle_btn.config(text="OFF", bg="#cc3333", activebackground="#aa2222")
+            self.toggle_btn.config(text="OFF", bg=COLOR_OFF, activebackground=COLOR_OFF_ACTIVE)
             self.status_var.set("Disabled")
 
-    # ============================================================ Hooks
-
-    def _install_hook(self):
+    def _install_hook(self) -> None:
+        """Register a global keyboard hook for the target key."""
         self._uninstall_hook()
         self._hook = keyboard.hook_key(self.target_key, self._on_key_event)
 
-    def _uninstall_hook(self):
+    def _uninstall_hook(self) -> None:
+        """Remove the active keyboard hook if one exists."""
         if self._hook is not None:
             keyboard.unhook(self._hook)
             self._hook = None
 
-    # ====================================================== Key capture
-
-    def _start_key_capture(self):
+    def _start_key_capture(self) -> None:
         """Enter 'listening' mode: the next key pressed becomes the target."""
         if self.enabled:
-            self._toggle()  # turn off first
+            self._toggle()
         self.capturing_key = True
         self.key_display.config(text="press a key…")
         self.status_var.set("Press any key to set as target…")
         self.change_key_btn.config(state="disabled")
         keyboard.hook(self._capture_callback, suppress=False)
 
-    def _capture_callback(self, event):
+    def _capture_callback(self, event: KeyboardEvent) -> None:
+        """Handle the first KEY_DOWN during key capture and set it as target."""
         if event.event_type != keyboard.KEY_DOWN:
             return
         keyboard.unhook(self._capture_callback)
-        self.target_key = event.name
+        self.target_key = event.name or DEFAULT_KEY
         self.key_display.config(text=self.target_key.upper())
         self.capturing_key = False
         self.change_key_btn.config(state="normal")
         self.status_var.set(f"Target key set to [{self.target_key.upper()}]")
 
-    # ================================================== Event handling
+    def _on_key_event(self, event: KeyboardEvent) -> None:
+        """Handle keyboard hook events for the target key.
 
-    def _on_key_event(self, event):
-        """Called by the keyboard hook for every event on the target key."""
+        Starts a repeat thread on KEY_DOWN and stops it on KEY_UP.
+        Ignores synthetic events produced by ``_repeat_loop``.
+        """
         if self._simulating:
-            return  # ignore events we generated ourselves
+            return
 
         if event.event_type == keyboard.KEY_DOWN:
-            if not self.key_physically_held:
-                self.key_physically_held = True
-                threading.Thread(target=self._repeat_loop, daemon=True).start()
+            with self._lock:
+                if not self.key_physically_held:
+                    self.key_physically_held = True
+                    threading.Thread(target=self._repeat_loop, daemon=True).start()
 
         elif event.event_type == keyboard.KEY_UP:
             self.key_physically_held = False
 
-    def _repeat_loop(self):
-        """Background thread: sends rapid key-press events."""
+    def _repeat_loop(self) -> None:
+        """Background thread: sends rapid key-press events until the key is released."""
         while self.key_physically_held and self.enabled:
             self._simulating = True
             try:
@@ -207,24 +236,21 @@ class KeyRepeatApp:
             try:
                 interval = self.repeat_interval_ms.get() / 1000.0
             except (tk.TclError, ValueError):
-                interval = 0.030
+                interval = FALLBACK_INTERVAL_S
             time.sleep(interval)
 
-    # ============================================================= Exit
-
-    def _on_close(self):
+    def _on_close(self) -> None:
+        """Clean up hooks and destroy the window."""
         self.enabled = False
         self.key_physically_held = False
         self._uninstall_hook()
         self.root.destroy()
 
-    # ============================================================== Run
-
-    def run(self):
+    def run(self) -> None:
+        """Start the tkinter main loop."""
         self.root.mainloop()
 
 
-# ──────────────────────────────────────────────────────────────────────
 if __name__ == "__main__":
     app = KeyRepeatApp()
     app.run()

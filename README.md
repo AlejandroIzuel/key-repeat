@@ -28,6 +28,8 @@ Grab the latest **KeyRepeatTool.exe** from the [Releases page](https://github.co
 
 > You may need to right-click → **Run as Administrator** for the keyboard hooks to work.
 
+> **Windows SmartScreen warning:** Since the `.exe` is not code-signed, Windows may show an "Unknown publisher" warning. This is normal for open-source tools. Click **"More info"** → **"Run anyway"** to proceed.
+
 ---
 
 ## Run from source
