@@ -2,7 +2,7 @@
 
 A simple Python utility with a GUI that rapidly repeats a key while it is physically held down — much faster than the default OS key repeat. Great for games like Enshrouded!
 
-![Python](https://img.shields.io/badge/Python-3.7%2B-blue)
+![Python](https://img.shields.io/badge/Python-3.12%2B-blue)
 ![Platform](https://img.shields.io/badge/Platform-Windows-informational)
 
 ## Features
@@ -24,7 +24,7 @@ Grab the latest **KeyRepeatTool.exe** from the [Releases page](https://github.co
 
 ### Requirements
 
-- Python 3.7+
+- Python 3.12+
 - [`keyboard`](https://pypi.org/project/keyboard/) library
 
 ### Installation
