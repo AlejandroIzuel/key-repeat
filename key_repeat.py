@@ -19,10 +19,7 @@ from tkinter import ttk
 try:
     import keyboard
 except ImportError:
-    print(
-        "ERROR: 'keyboard' package not found.\n"
-        "Install it with:  pip install keyboard"
-    )
+    print("ERROR: 'keyboard' package not found.\nInstall it with:  pip install keyboard")
     sys.exit(1)
 
 
@@ -60,9 +57,7 @@ class KeyRepeatApp:
         main.pack(fill="both", expand=True)
 
         # Title
-        ttk.Label(main, text="Key Repeat Tool", style="Header.TLabel").pack(
-            pady=(0, 15)
-        )
+        ttk.Label(main, text="Key Repeat Tool", style="Header.TLabel").pack(pady=(0, 15))
 
         # ── On / Off toggle button ──────────────────────────────────
         self.toggle_btn = tk.Button(
@@ -85,9 +80,7 @@ class KeyRepeatApp:
         key_frame = ttk.Frame(main)
         key_frame.pack(fill="x", pady=(0, 12))
 
-        ttk.Label(key_frame, text="Target key:", style="Info.TLabel").pack(
-            side="left"
-        )
+        ttk.Label(key_frame, text="Target key:", style="Info.TLabel").pack(side="left")
         self.key_display = ttk.Label(
             key_frame,
             text=self.target_key.upper(),
@@ -105,9 +98,7 @@ class KeyRepeatApp:
         speed_frame = ttk.Frame(main)
         speed_frame.pack(fill="x", pady=(0, 5))
 
-        ttk.Label(speed_frame, text="Repeat interval:", style="Info.TLabel").pack(
-            anchor="w"
-        )
+        ttk.Label(speed_frame, text="Repeat interval:", style="Info.TLabel").pack(anchor="w")
 
         slider_row = ttk.Frame(speed_frame)
         slider_row.pack(fill="x")
@@ -125,9 +116,7 @@ class KeyRepeatApp:
         self.speed_info = ttk.Label(speed_frame, text="", style="Small.TLabel")
         self.speed_info.pack(anchor="w", pady=(2, 0))
         self._update_speed_info()
-        self.repeat_interval_ms.trace_add(
-            "write", lambda *_: self._update_speed_info()
-        )
+        self.repeat_interval_ms.trace_add("write", lambda *_: self._update_speed_info())
 
         # ── Status bar ──────────────────────────────────────────────
         self.status_var = tk.StringVar(value="Ready")
@@ -152,9 +141,7 @@ class KeyRepeatApp:
         if self.enabled:
             self._install_hook()
             self.toggle_btn.config(text="ON", bg="#339933", activebackground="#227722")
-            self.status_var.set(
-                f"Active  —  hold [{self.target_key.upper()}] for rapid repeat"
-            )
+            self.status_var.set(f"Active  —  hold [{self.target_key.upper()}] for rapid repeat")
         else:
             self._uninstall_hook()
             self.key_physically_held = False
