@@ -1,16 +1,26 @@
 # Key Repeat Tool
 
-A simple Python utility with a GUI that rapidly repeats a key while it is physically held down — much faster than the default OS key repeat. Great for games like Enshrouded!
+> **Hold a key, and it repeats — blazing fast.** No more finger fatigue from mashing the same button over and over.
+
+A lightweight Windows utility with a simple GUI that rapidly repeats any key while it's physically held down — much faster than the default OS key repeat. Useful for gaming, accessibility, productivity, or anywhere you need rapid key repeats.
 
 ![Python](https://img.shields.io/badge/Python-3.12%2B-blue)
 ![Platform](https://img.shields.io/badge/Platform-Windows-informational)
+![License](https://img.shields.io/badge/License-MIT-green)
 
 ## Features
 
 - **Toggle ON/OFF** with a single click
-- **Configurable target key** — click "Change Key…" and press any key
+- **Configurable target key** — click "Change Key…" and press any key (default: **E**)
 - **Adjustable repeat speed** — slider from 5 ms (~200 reps/sec) to 200 ms (~5 reps/sec)
 - Lightweight tkinter GUI, no heavy dependencies
+- Standalone `.exe` available — no Python needed
+
+## Use cases
+
+- **Gaming** — spam interact/gather keys (e.g. gathering plants in Enshrouded, fishing in MMOs, rapid-fire actions)
+- **Accessibility** — help users who have difficulty pressing keys repeatedly
+- **Productivity** — rapid scrolling, text deletion, or any repetitive key action
 
 ## Download
 
