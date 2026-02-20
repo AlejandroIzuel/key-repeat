@@ -12,24 +12,43 @@ A simple Python utility with a GUI that rapidly repeats a key while it is physic
 - **Adjustable repeat speed** — slider from 5 ms (~200 reps/sec) to 200 ms (~5 reps/sec)
 - Lightweight tkinter GUI, no heavy dependencies
 
-## Requirements
+## Download
+
+Grab the latest **KeyRepeatTool.exe** from the [Releases page](https://github.com/AlejandroIzuel/key-repeat/releases) — no Python installation needed. Just download and run!
+
+> You may need to right-click → **Run as Administrator** for the keyboard hooks to work.
+
+---
+
+## Run from source
+
+### Requirements
 
 - Python 3.7+
 - [`keyboard`](https://pypi.org/project/keyboard/) library
 
-## Installation
+### Installation
 
 ```bash
 pip install -r requirements.txt
 ```
 
-## Usage
+### Usage
 
 ```bash
 python key_repeat.py
 ```
 
 > **Note:** On Windows you may need to run your terminal **as Administrator** so the `keyboard` library can install global key hooks.
+
+### Build .exe locally
+
+```bash
+pip install pyinstaller
+pyinstaller KeyRepeatTool.spec
+```
+
+The executable will be in the `dist/` folder.
 
 ### Quick start
 
